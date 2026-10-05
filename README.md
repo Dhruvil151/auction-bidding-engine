@@ -41,6 +41,20 @@ The current top bid and pending decision share one database document so the crit
 
 See the [technical guide](docs/TECHNICAL_GUIDE.md) for setup details, architecture, and implementation boundaries.
 
+## Engineering decisions
+
+### Keep the winning decision atomic
+
+The current top bid and pending decision live in one auction document; a conditional update checks the version before changing the winner. This keeps competing bids consistent without relying on a lock in one API process. One hot auction still serializes decisions.
+
+### Remember requests separately
+
+A request ledger stores outcomes keyed by auction and idempotency key. Retries can replay a saved result while the hot auction document stays bounded. Retention needs an explicit policy before production.
+
+### Recover interrupted writes
+
+Save a pending decision before completing the request ledger; retries or the recovery command finish it. The design handles the gap between two document writes without pretending they are a database transaction.
+
 ## Checks and evidence
 
 ```sh
@@ -57,3 +71,7 @@ The [publication validation report](VALIDATION.md) records earlier checks and th
 
 Backend exercise with local tests and benchmarks. Authentication, payments, winner settlement, replicated failover, and public deployment are outside its current scope.
 
+
+## License
+
+Original project code and documentation are available under the [MIT License](LICENSE). Third-party dependencies and assets retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
