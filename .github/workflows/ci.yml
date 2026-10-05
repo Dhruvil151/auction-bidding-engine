@@ -1,0 +1,32 @@
+name: Project checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      rethinkdb:
+        image: rethinkdb:2.4
+        ports:
+          - 28015:28015
+        options: >-
+          --health-cmd "bash -c 'echo > /dev/tcp/127.0.0.1/28015'"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
